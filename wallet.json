@@ -1,0 +1,12 @@
+[
+    {
+        "walletaddress":"钱包地址1",
+        "buy":"false",
+        "sell":"false"
+    },
+    {
+        "walletaddress":"钱包地址2",
+        "buy":"false",
+        "sell":"false"
+    }
+]

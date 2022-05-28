@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src * 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+  <link href="./styles.css" rel="stylesheet">
+  <title>Hello World!</title>
+</head>
+
+<body>
+
+  <div>
+    <h1>
+      NFT抢购程序
+    </h1>
+
+
+    <from id="network">
+
+    </from>
+    <form id="webtype">
+      <input type="radio" name="webnetwork" value="rpc" id="rpc" onclick='changewebnetwork(this.value)'>rpc地址</input>
+      <input type="radio" name="webnetwork" value="ws" id="ws" onclick='changewebnetwork(this.value)'>ws地址</input>
+    </form>
+    <br>
+    <input class="inputa" type="text" name="name" id="weburl" placeholder="服务地址" autofocus
+      value="https://mainnet.infura.io/v3/e1d0b7dea53643a194cadb6ed123f88e" />
+    <br>
+    <input type="button" onclick="initweb3()" class="btn btn-add" value="初始化web3"> </input>
+  </div>
+ 
+  <div style="width:500px;float:left ">
+    <labe>授权检查：</labe>
+    <label>代币合约地址：</label><input id="tokenaddresscheck" value="0xc778417E063141139Fce010982780140Aa0cD5Ab">
+    <br>
+    <label>授权地址：</label><input id="approveaddress" value="0x10ED43C718714eb63d5aA57B78B54704E256024E">
+    <br>
+    <label>gas：</label><input id="approvegas" value="5">
+    <br>
+    <label>gaslimint：</label><input id="approvegaslimit" value="420000">
+    <br>
+    <button onclick="oncheckapprove()">批量检查授权pancake可以使用该代币</button> <button onclick ="ceshi()" >查询主币</button>
+  </div>
+
+  <div style="width:500px; ">
+    <labe>监控价格：</labe>
+    <label>LP池子地址：</label><input id="lpaddress" value="0x09fe9db65c44b9610ab7dcd6853f887d2ade7e7f">
+    <br>
+    <label>代币地址：</label><input id="lptokenaddress" value="0x4a2c860cEC6471b9F5F5a336eB4F38bb21683c98">
+    <br>
+    <label>交易对地址（U地址）：</label><input id="lptoken1address" value="0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d">
+    <br>
+   
+    <button onclick="onstartmonitor()">监控价格</button> <button onclick="onstopmonitor()">停止监控</button>
+  </div>
+
+  <div style="width:500px">
+ 
+    <label>设置买入价:</label><input id="buyprice" value="9.8">
+    <br>
+    <label>设置买入数量(代币):</label><input id="buynumber" value="100">
+    <br>
+    <label>设置买入滑点:</label><input id="buylose" value="0.01">
+    <br>
+    <label>设置卖出价:</label><input id="sellprice" value="12">
+    <br>
+    <label>设置卖出数量(代币):</label><input id="sellnumber" value="100">
+    <br>
+    <label>设置卖出滑点:</label><input id="selllose" value="0.01">
+    <br>
+    <label>设置买卖gas:</label><input id="buygas" value="5">
+    <br>
+    <label>设置买卖gas limit:</label><input id="buygaslimit" value="420000">
+    <br>
+    <button onclick="onstartbuy()">开始自动买入卖出</button> 
+    <button onclick="onstopbuy()">停止自动买入卖出</button> 
+  </div>
+  <div id="log">
+
+  </div> <!-- You can also require other files to run in this process -->
+  <script src="./renderer.js"></script>
+  <style type="text/css">
+    .form-box {
+      width: 80%;
+      margin: 5px auto
+    }
+
+    .inputa {
+      width: 50%;
+      margin: 5px auto
+    }
+
+    .evmnetwork {
+      width: 100px;
+      margin-top: 2px
+    }
+
+    .btn-add {
+      width: 200px;
+      margin-top: 2px
+    }
+  </style>
+</body>
+
+<script>
+  // You can also require other files to run in this process
+  require('./renderer.js')
+
+  const electron = require('electron');
+  const { ipcRenderer } = electron;
+
+  function init() {
+    document.querySelector("#rpc").checked = true;
+  }
+  init();
+
+  var nownetwork = 'eth';
+  var chainid = 1;
+  //初始化web3
+  function initweb3() {
+    var webtype = "rpc";
+    const wschecked = document.querySelector('#ws').checked
+    if (wschecked) {
+      webtype = "ws";
+    }
+
+    const weburl = document.querySelector('#weburl').value;
+    var value = { webtype, weburl, chainid, nownetwork };
+    //console.log(value);
+    ipcRenderer.send('info:initweb3', value)
+  }
+
+  //查询智能合约功能
+  function queryContarct() {
+    const contractaddress = document.querySelector('#Contractaddress').value;
+    evmnetwork = getNetworkInfo(nownetwork);
+    if (evmnetwork[0]) {
+      var apiurl = evmnetwork[1].apiurl;
+      var value = { contractaddress, apiurl };
+      ipcRenderer.send('info:queryabi', value)
+    }
+  }
+
+
+
+  //抢购开始函数
+  function qianggou() {
+    const nftaddress = document.querySelector('#nftaddress').value;
+    const inputdata = document.querySelector('#inputdata').value;
+    const gas = document.querySelector('#qianggougas').value;
+    const gaslimit = document.querySelector('#qianggougaslimit').value;
+    const neth = document.querySelector('#neth').value;
+    value = { nftaddress, inputdata, gas, gaslimit, neth };
+    console.log("开始抢购，请稍等，或者去区块链网络查看：");
+    ipcRenderer.send('info:qianggou', value)
+  }
+
+  function ceshi() {
+
+
+    ipcRenderer.send('info:test', {})
+  }
+
+  function init1() {
+
+
+    var network = document.querySelector('#network');
+    var i = 0;
+    for (evmnetwork in evmnetworks) {
+      //console.log(evmnetwork);
+      var radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "evmnetwork";
+      radio.value = evmnetworks[evmnetwork].network;
+      radio.id = evmnetworks[evmnetwork].network;
+      if (i == 0) {
+        radio.checked = true;
+        nownetwork = evmnetworks[evmnetwork].network;
+        chainid = evmnetworks[evmnetwork].chainid;
+      }
+      i++;
+      //radio.innerHTML = '"' + evmnetworks[evmnetwork].network + '"';
+      radio.onclick = function () { changenetwork(this.value) };
+      network.appendChild(radio);
+      var label = document.createElement("label");
+      label.innerHTML = evmnetworks[evmnetwork].network;
+      network.appendChild(label);
+    }
+
+  }
+
+  function changewebnetwork(webtype) {
+    //alert(webtype);
+    changenetwork(nownetwork);
+  }
+
+  function changenetwork(network) {
+    var result = getNetworkInfo(network);
+    if (result[0]) {
+      nownetwork = result[1].network;
+      chainid = result[1].chainid;
+      var webtype = "rpc";
+      const wschecked = document.querySelector('#ws').checked
+      if (wschecked) {
+        webtype = "ws";
+      }
+      if (webtype == "rpc") {
+        document.querySelector('#weburl').value = result[1].rpc;
+      }
+      else {
+        document.querySelector('#weburl').value = result[1].ws;
+      }
+
+    }
+
+  }
+
+  function getNetworkInfo(network) {
+    for (evmnetwork of evmnetworks) {
+      //console.log(evmnetwork);
+      if (network == evmnetwork.network) {
+        return [true, evmnetwork];
+
+      }
+    }
+    return [false, "false"];
+  }
+
+  init1();
+
+
+
+  ipcRenderer.on('info:initweb3', (e, value) => {
+    //console.log(value)
+    if (value.result) {
+      console.log("initweb3成功");
+    }
+    else {
+      console.log("initweb3失败");
+    }
+
+  });
+  
+  var abi = null;
+  ipcRenderer.on('info:queryabi', (e, value) => {
+    console.log(value)
+    if (value.result[0] == true) {
+      console.log("智能合约查询成功")
+      abi = value.result;
+    }
+    else {
+      abi = null;
+    }
+  });
+
+  function cleanchild(selecthtml) {
+    while (true) {
+      try {
+        selecthtml.removeChild(selecthtml.childNodes[0]);
+      }
+      catch (e) {
+        break;
+      }
+    }
+  }
+
+  function readfunction(value) {
+    //debugger;
+    var selecthtml = document.querySelector('#fangfa');
+    if (selecthtml != null) {
+
+      cleanchild(selecthtml)
+    }
+    else {
+      return;
+    }
+
+    if (abi == null) {
+      return;
+    }
+    var viewmap = null;
+    var typename = "view"
+    if (value == "view") {
+      viewmap = abi[1];
+      typename = "view";
+
+    }
+    else if (value == "nonpayable") {
+      viewmap = abi[2];
+      typename = "nonpayable";
+    }
+    else if (value == "payable") {
+      viewmap = abi[3];
+      typename = "payable";
+    }
+    viewmap.forEach(element => {
+      var fname = element.name;
+      var option = document.createElement("option");
+      option.value = typename;
+      option.id = fname;
+      option.innerHTML = fname;
+      //option.onclick = function () { changefunction(this.value,this.id) };
+      selecthtml.appendChild(option);
+    });
+  }
+
+  function changefunction(selecthtml) {
+    //debugger;
+    var option = selecthtml.options[selecthtml.selectedIndex];
+    console.log(option.value)
+    changefunctionEX(option.value, option.id);
+  }
+
+  function transpara(input) {
+    type = input.name;
+    value = input.value;
+    id = input.id;
+    if (type == "bool") {
+      if (value.toLowerCase() == "ture" || value == "1") {
+        return true;
+      }
+      else if (value.toLowerCase() == "false" || value == "0") {
+        return false;
+      }
+      else {
+        console("错误：" + id + "输入的参数不匹配");
+        return "error";
+      }
+    }
+    else if (type == "address") {
+      if (value.indexOf("0x") == -1) {
+        console("错误：" + id + "输入的参数不匹配");
+        return "error";
+      }
+      else {
+        return value;
+      }
+    }
+    else {
+      return value;
+    }
+
+  }
+
+  function exce() {
+    var paralist = document.querySelector('#paralist').getElementsByTagName("input")
+    var okvalue = [];
+    var tijiao = true;
+    for (i = 0; i < paralist.length; i++) {
+      var result = transpara(paralist[i])
+      if (result != "error")
+        okvalue.push(result)
+      else
+        tijiao = false;
+    }
+    if (tijiao) {
+      //给后台提交数组
+      if (useabi != null) {
+
+        const nftaddress = document.querySelector('#nftaddress').value;
+
+        const gas = document.querySelector('#qianggougas').value;
+        const gaslimit = document.querySelector('#qianggougaslimit').value;
+        const neth = document.querySelector('#neth').value;
+
+        debugger;
+        value = { useabi, okvalue, nftaddress, gas, gaslimit, neth };
+        ipcRenderer.send('info:abishiyong', value)
+      }
+    }
+  }
+
+  var useabi = null;
+  function changefunctionEX(name, value) {
+
+    var viewmap = null;
+    if (name == "view") {
+      viewmap = abi[1];
+
+
+    }
+    else if (name == "nonpayable") {
+      viewmap = abi[2];
+
+    }
+    else if (name == "payable") {
+      viewmap = abi[3];
+
+    }
+    if (viewmap != null) {
+      var valueabi = viewmap.get(value);
+      if (valueabi != null) {
+        console.log(valueabi);
+        var inputs = valueabi.inputs;
+        useabi = valueabi;
+        var selecthtml = document.querySelector('#paralist');
+        if (selecthtml != null) {
+
+          cleanchild(selecthtml)
+        }
+        else {
+          return;
+        }
+
+        inputs.forEach(element => {
+
+          var aname = document.createElement('a');
+          aname.innerHTML = element.name + "(" + element.type + ")";
+          selecthtml.appendChild(aname)
+          var input = document.createElement('input');
+          input.name = element.type;
+          input.id = element.name;
+          selecthtml.appendChild(input);
+          selecthtml.appendChild(document.createElement('BR'));
+        });
+
+
+      }
+      else {
+        useabi = null;
+      }
+
+    }
+  }
+
+  ipcRenderer.on('info:msg', (e, value) => {
+  
+    
+
+    console.log( value)
+
+
+  });
+
+  // 检查代币是否授权，没有授权直接授权
+  function oncheckapprove()
+  {
+    const tokenaddresscheck = document.querySelector('#tokenaddresscheck').value;
+
+    const approveaddress = document.querySelector('#approveaddress').value;
+    const approvegas = document.querySelector('#approvegas').value;
+    const approvegaslimit = document.querySelector('#approvegaslimit').value;
+
+    value = { tokenaddresscheck, approveaddress,approvegas,approvegaslimit };
+    ipcRenderer.send('info:checkapprove', value)
+  }
+  //监控价格
+  function onstartmonitor()
+  {
+    const lpaddress = document.querySelector('#lpaddress').value;
+
+    const lptokenaddress = document.querySelector('#lptokenaddress').value;
+    const lptoken1address = document.querySelector('#lptoken1address').value;
+    
+    value = { lpaddress, lptokenaddress,lptoken1address };
+    ipcRenderer.send('info:listenprice', value)
+  }
+
+  function onstopmonitor()
+  {
+    ipcRenderer.send('info:stoplistenprice', {})
+  }
+
+  //开始自动买入卖出
+  function onstartbuy()
+  {
+    var buyprice = document.querySelector('#buyprice').value;
+    var buynumber = document.querySelector('#buynumber').value;
+    var buylose = document.querySelector('#buylose').value;
+
+    var sellprice = document.querySelector('#sellprice').value;
+    var sellnumber = document.querySelector('#sellnumber').value;
+    var selllose = document.querySelector('#selllose').value;
+    var buygas = document.querySelector('#buygas').value;
+    var buygaslimit = document.querySelector('#buygaslimit').value;
+    var pancakeaddress = document.querySelector('#approveaddress').value; 
+    var value = {buyprice,buynumber,buylose,sellprice,sellnumber,selllose,buygas,buygaslimit,pancakeaddress}
+    ipcRenderer.send('info:startbuy', value)
+  }
+
+  function onstopbuy()
+  {
+    ipcRenderer.send('info:stopbuy', {})
+  }
+
+  function getnowtime()
+  {
+    dt = new Date();
+
+var y = dt.getFullYear();
+
+var mt = dt.getMonth() + 1;
+
+var day = dt.getDate();
+
+var h = dt.getHours(); //获取时
+
+var m = dt.getMinutes(); //获取分
+
+var s = dt.getSeconds(); //获取秒
+
+var nowtimet = '当前时间：' + y + '年' + mt + '月' + day + '-' + h + '时' + m + '分' + s + '秒:';
+    return nowtimet;
+  }
+  (function () {
+    var old = console.log;
+    var logger = document.getElementById('log');
+    console.log = function (message) {
+
+      var nowtime =  (Date.now());
+
+      if (typeof message == 'object') {
+
+        logger.innerHTML += getnowtime() + (JSON && JSON.stringify ? JSON.stringify(message) : message) + '<br />';
+      } else {
+        logger.innerHTML += getnowtime() + message + '<br />';
+      }
+    }
+  })();	
+</script>
+
+</html>
