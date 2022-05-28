@@ -38,5 +38,10 @@ sell 的值为true时代表有卖的权限，false 代表关闭卖权限
 
 
 **程序使用方法**
+
 参考 img文件夹下的image.png
 ![image](https://raw.githubusercontent.com/robotchangzhang/chainrobot/main/img/image.png)
+
+
+厂长支持地址：0x100422cdf07c187eb6a67ae931db62e35f8773ce
+各条链都可以
