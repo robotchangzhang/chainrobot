@@ -602,7 +602,7 @@ const buytokenall = async(buyinfo,tokeninfo) =>
 
 const selltoken = async(prikey,buyinfo,tokeninfo) =>
 {
-    var wbnbaddress = "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c";
+    var wbnbaddress = buyinfo.buywbnb;
     lpaddress = tokeninfo.lpaddress;
     tokenaddress = tokeninfo.lptokenaddress;
     usdcaddress = tokeninfo.lptoken1address;

@@ -261,6 +261,9 @@
         <div class="row">
           <label>设置买卖gas limit:</label><input id="buygaslimit" value="420000">
         </div>
+        <div class="row">
+          <label>设置wbnb(weth) 地址:</label><input id="buywbnb" value="0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c">
+        </div>
         <button onclick="onstartbuy()">开始自动买入卖出</button>
         <button onclick="onstopbuy()">停止自动买入卖出</button>
       </div>
@@ -642,7 +645,8 @@
     var buygas = document.querySelector('#buygas').value;
     var buygaslimit = document.querySelector('#buygaslimit').value;
     var pancakeaddress = document.querySelector('#approveaddress').value;
-    var value = { buyprice, buynumber, buylose, sellprice, sellnumber, selllose, buygas, buygaslimit, pancakeaddress }
+    var buywbnb =  document.querySelector('#buywbnb').value;
+    var value = { buyprice, buynumber, buylose, sellprice, sellnumber, selllose, buygas, buygaslimit, pancakeaddress,buywbnb }
     ipcRenderer.send('info:startbuy', value)
   }
 
